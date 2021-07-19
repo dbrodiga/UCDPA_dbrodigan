@@ -3,14 +3,14 @@ import requests
 import pandas as pd
 import numpy as np
 
-# Retrieving data from an online API
+# Retrieving data from an online API - importing data milestone
 request = requests.get('https://www.alphavantage.co/query?function=OVERVIEW&symbol=AIG&apikey=2KMJ76XV3WQ5M9K7')
 
 data = request.json()
 
 print('The Book Value of AIG is ' + data['BookValue'] + ' and the Earnings per share figure is ' + data['EPS'] + '.')
 
-# Importing a CSV file into a Pandas DataFrame
+# Importing a CSV file into a Pandas DataFrame - importing data milestone
 prop_price = pd.read_csv('PPR_ALL.csv', encoding='latin1', parse_dates=['Date of Sale (dd/mm/yyyy)'], dayfirst=True)
 
 print(prop_price.head())
@@ -18,12 +18,12 @@ print(prop_price.info())
 
 prop_price = prop_price.rename(columns={'Date of Sale (dd/mm/yyyy)': 'Date of Sale', 'Price ()': 'Price'})
 
-# Remove duplicates
+# Remove duplicates - analyzing data milestone
 prop_price.drop_duplicates(inplace=True)
 
 print(prop_price.info())
 
-# Check for missing values
+# Check for missing values - analyzing data milestone
 print(prop_price.isna().any())
 
 # Remove the columns Postal Code and Property Size Description as there are so many missing values
@@ -40,7 +40,8 @@ english = ['New Dwelling house /Apartment', 'New Dwelling house /Apartment', 'Se
 prop_price['Description of Property'] = prop_price['Description of Property'].replace(irish, english)
 
 
-# Remove the € symbol which is stored as  and commas from the Price column and convert column to float
+# Remove the € symbol which is stored as ' ' and commas from the Price column and convert column to float
+# Use of functions - python milestone
 def convert_currency(val):
     new_val = val.replace(',', '').replace(' ', '')
     return float(new_val)
@@ -49,6 +50,7 @@ def convert_currency(val):
 prop_price['Price'] = prop_price['Price'].apply(convert_currency)
 
 # Create a new column with the price including VAT of 13.5% where it is not included
+# Use of Loop - analyzing data milestone
 price_VAT = []
 for value in prop_price['VAT Exclusive']:
     if value == 'Yes':
@@ -61,23 +63,30 @@ prop_price['Price inc VAT'] = prop_price['Price']*price_VAT
 print(prop_price.info())
 
 # Set the Date of Sale column as the index
-# Sort the index so that the date of sale is in chronological order
+# Sort the index so that the date of sale is in chronological order - analyzing data milestone
 prop_price_index = prop_price.set_index('Date of Sale')
 prop_price_sorted = prop_price_index.sort_index()
 
 print(prop_price_sorted.head())
 
-# Create a column for Year and also one for month
+# Create a column for Year
 prop_price['Year'] = prop_price['Date of Sale'].dt.year
-prop_price['Month'] = prop_price['Date of Sale'].dt.month_name
 
 print(prop_price.info())
 
-# Grouping to show the min, max, median and mean price by county and year
+# Grouping to show the min, max, median and mean price by county and year - analyzing data milestone
 # Changing the selected_co list allows visibility over any chosen counties
+# Use of Numpy and Lists
 selected_co = ['Monaghan', 'Dublin']
 prop_price_co = prop_price[prop_price['County'].isin(selected_co)]
 prop_price_co = prop_price_co.groupby(['County', 'Year'])['Price inc VAT'].agg([min, max, np.mean, np.median])
 print(prop_price_co)
 
-# Merge DataFrames
+# Subset the entire data frame for properties that were sold exactly twice in the time period
+two_sales = prop_price[prop_price.groupby('Address').Address.transform('count') == 2]
+
+# Merge DataFrames specifically for properties that were sold in both 2010 and 2020  - analyzing data milestone
+two_sales_2010 = two_sales[two_sales['Year'] == 2010]
+two_sales_2020 = two_sales[two_sales['Year'] == 2020]
+
+sales_2010_2020 = two_sales_2010.merge(two_sales_2020, on='Address', suffixes=('_10', '_20'))
