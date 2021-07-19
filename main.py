@@ -2,6 +2,7 @@
 import requests
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 
 # Retrieving data from an online API - importing data milestone
 request = requests.get('https://www.alphavantage.co/query?function=OVERVIEW&symbol=AIG&apikey=2KMJ76XV3WQ5M9K7')
@@ -90,3 +91,58 @@ two_sales_2010 = two_sales[two_sales['Year'] == 2010]
 two_sales_2020 = two_sales[two_sales['Year'] == 2020]
 
 sales_2010_2020 = two_sales_2010.merge(two_sales_2020, on='Address', suffixes=('_10', '_20'))
+
+# Use Matplotlib to create charts - Visualize milestone
+dublin_prices = prop_price_co.loc['Dublin']
+monaghan_prices = prop_price_co.loc['Monaghan']
+
+
+# Define a function called plot_timeseries
+def plot_timeseries(axes, x, y, color, xlabel, ylabel):
+    axes.plot(x, y, color=color)
+    axes.set_xlabel(xlabel)
+    axes.set_ylabel(ylabel, color=color)
+    axes.tick_params('y', colors=color)
+
+
+fig, ax = plt.subplots()
+plot_timeseries(ax, dublin_prices.index, dublin_prices['median'], "red", "Time", "Dublin Prices")
+ax2 = ax.twinx()
+plot_timeseries(ax2, monaghan_prices.index, monaghan_prices['median'], "Blue", "Time", "Monaghan Prices")
+ax.set_title('Dublin and Monaghan median prices')
+plt.show()
+
+# Create a pie chart to show the county where the largest portion of sales take place
+county_sales = prop_price.groupby('County').agg('count')
+county_sales = county_sales.sort_values('Date of Sale', ascending=False)
+county_labels = county_sales.index
+county_sales_volume = county_sales['Date of Sale']
+
+fig_2, ax = plt.subplots()
+ax.pie(county_sales_volume, labels=county_labels, autopct='%.0f%%')
+plt.title('Volume of sales by County')
+plt.show()
+
+
+# Create a function to calculate the 75th percentile and group the lesser counts in an other category
+def group_lower(df, column):
+    county_counts = df.groupby(column).agg('count')
+    pct_value = county_counts[lambda x: x.columns[0]].quantile(.75)
+    values_below_pct_value = county_counts[lambda x: x.columns[0]].loc[lambda s: s < pct_value].index.values
+
+    def fix_values(row):
+        if row[column] in values_below_pct_value:
+            row[column] = 'Other'
+        return row
+    county_group = df.apply(fix_values, axis=1).groupby(column).agg('count')
+    return county_group
+
+
+fig_3, ax = plt.subplots()
+county_grouped = group_lower(prop_price, 'County')
+county_labels_oth = county_grouped.index
+county_sales_volume_oth = county_grouped['Date of Sale']
+explode = (0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1)
+ax.pie(county_sales_volume_oth, labels=county_labels_oth, autopct='%.0f%%', explode=explode)
+plt.title('Volume of sales by County')
+plt.show()
