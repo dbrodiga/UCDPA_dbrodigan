@@ -1,4 +1,4 @@
-# Import required
+# Imports required
 import requests
 import pandas as pd
 import numpy as np
@@ -89,8 +89,8 @@ two_sales = prop_price[prop_price.groupby('Address').Address.transform('count') 
 # Merge DataFrames specifically for properties that were sold in both 2010 and 2020  - analyzing data milestone
 two_sales_2010 = two_sales[two_sales['Year'] == 2010]
 two_sales_2020 = two_sales[two_sales['Year'] == 2020]
-
 sales_2010_2020 = two_sales_2010.merge(two_sales_2020, on='Address', suffixes=('_10', '_20'))
+sales_2010_2020.to_csv('sales.csv')
 
 # Use Matplotlib to create charts - Visualize milestone
 dublin_prices = prop_price_co.loc['Dublin']
@@ -109,7 +109,7 @@ fig, ax = plt.subplots()
 plot_timeseries(ax, dublin_prices.index, dublin_prices['median'], "red", "Time", "Dublin Prices")
 ax2 = ax.twinx()
 plot_timeseries(ax2, monaghan_prices.index, monaghan_prices['median'], "Blue", "Time", "Monaghan Prices")
-ax.set_title('Dublin and Monaghan median prices')
+ax.set_title('Dublin and Monaghan median property prices')
 plt.show()
 
 # Create a pie chart to show the county where the largest portion of sales take place
